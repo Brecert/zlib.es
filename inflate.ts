@@ -6,12 +6,18 @@ import {
   DISTANCE_EXTRA_BIT_LEN,
   LENGTH_EXTRA_BIT_BASE,
   LENGTH_EXTRA_BIT_LEN,
-} from './const';
-import {generateHuffmanTable, ICodelenValues, makeFixedHuffmanCodelenValues} from './huffman';
-import {BitReadStream} from './utils/BitReadStream';
-import {Uint8WriteStream} from './utils/Uint8WriteStream';
+} from "./const.ts";
+import {
+  generateHuffmanTable,
+  ICodelenValues,
+  makeFixedHuffmanCodelenValues,
+} from "./huffman.ts";
+import { BitReadStream } from "./_BitReadStream.ts";
+import { Uint8WriteStream } from "./_Uint8WriteStream.ts";
 
-const FIXED_HUFFMAN_TABLE = generateHuffmanTable( makeFixedHuffmanCodelenValues() );
+const FIXED_HUFFMAN_TABLE = generateHuffmanTable(
+  makeFixedHuffmanCodelenValues(),
+);
 
 export function inflate(input: Uint8Array, offset: number = 0) {
   const buffer = new Uint8WriteStream(input.length * 10);
@@ -29,17 +35,20 @@ export function inflate(input: Uint8Array, offset: number = 0) {
     } else if (bType === BTYPE.DYNAMIC) {
       inflateDynamicBlock(stream, buffer);
     } else {
-      throw new Error('Not supported BTYPE : ' + bType);
+      throw new Error("Not supported BTYPE : " + bType);
     }
     if (bFinal === 0 && stream.isEnd) {
-      throw new Error('Data length is insufficient');
+      throw new Error("Data length is insufficient");
     }
   }
 
   return buffer.buffer.subarray(0, buffer.index);
 }
 
-function inflateUncompressedBlock(stream: BitReadStream, buffer: Uint8WriteStream) {
+function inflateUncompressedBlock(
+  stream: BitReadStream,
+  buffer: Uint8WriteStream,
+) {
   // Skip to byte boundary
   if (stream.nowBitsLength < 8) {
     stream.readRange(stream.nowBitsLength);
@@ -47,7 +56,7 @@ function inflateUncompressedBlock(stream: BitReadStream, buffer: Uint8WriteStrea
   const LEN = stream.readRange(8) | stream.readRange(8) << 8;
   const NLEN = stream.readRange(8) | stream.readRange(8) << 8;
   if ((LEN + NLEN) !== 65535) {
-    throw new Error('Data is corrupted');
+    throw new Error("Data is corrupted");
   }
   for (let i = 0; i < LEN; i++) {
     buffer.write(stream.readRange(8));
@@ -63,8 +72,8 @@ function inflateFixedBlock(stream: BitReadStream, buffer: Uint8WriteStream) {
   let codelenMin = Number.MAX_SAFE_INTEGER;
   codelens.forEach((key) => {
     codelen = Number(key);
-    if (codelenMax < codelen) { codelenMax = codelen; }
-    if (codelenMin > codelen) { codelenMin = codelen; }
+    if (codelenMax < codelen) codelenMax = codelen;
+    if (codelenMin > codelen) codelenMin = codelen;
   });
   let code = 0;
   let value;
@@ -85,7 +94,7 @@ function inflateFixedBlock(stream: BitReadStream, buffer: Uint8WriteStream) {
         break;
       }
       if (codelenMax <= codelen) {
-        throw new Error('Data is corrupted');
+        throw new Error("Data is corrupted");
       }
       codelen++;
       code <<= 1;
@@ -141,8 +150,8 @@ function inflateDynamicBlock(stream: BitReadStream, buffer: Uint8WriteStream) {
   let codelenCodelenMin = Number.MAX_SAFE_INTEGER;
   codelenCodelens.forEach((key) => {
     codelenCodelen = Number(key);
-    if (codelenCodelenMax < codelenCodelen) { codelenCodelenMax = codelenCodelen; }
-    if (codelenCodelenMin > codelenCodelen) { codelenCodelenMin = codelenCodelen; }
+    if (codelenCodelenMax < codelenCodelen) codelenCodelenMax = codelenCodelen;
+    if (codelenCodelenMin > codelenCodelen) codelenCodelenMin = codelenCodelen;
   });
 
   const dataCodelenValues: ICodelenValues = {};
@@ -163,7 +172,7 @@ function inflateDynamicBlock(stream: BitReadStream, buffer: Uint8WriteStream) {
         break;
       }
       if (codelenCodelenMax <= codelenCodelen) {
-        throw new Error('Data is corrupted');
+        throw new Error("Data is corrupted");
       }
       codelenCodelen++;
       codelenCode <<= 1;
@@ -209,8 +218,8 @@ function inflateDynamicBlock(stream: BitReadStream, buffer: Uint8WriteStream) {
   let dataCodelenMin = Number.MAX_SAFE_INTEGER;
   dataCodelens.forEach((key) => {
     dataCodelen = Number(key);
-    if (dataCodelenMax < dataCodelen) { dataCodelenMax = dataCodelen; }
-    if (dataCodelenMin > dataCodelen) { dataCodelenMin = dataCodelen; }
+    if (dataCodelenMax < dataCodelen) dataCodelenMax = dataCodelen;
+    if (dataCodelenMin > dataCodelen) dataCodelenMin = dataCodelen;
   });
 
   const distanceCodelens = Object.keys(distanceHuffmanTables);
@@ -219,8 +228,12 @@ function inflateDynamicBlock(stream: BitReadStream, buffer: Uint8WriteStream) {
   let distanceCodelenMin = Number.MAX_SAFE_INTEGER;
   distanceCodelens.forEach((key) => {
     distanceCodelen = Number(key);
-    if (distanceCodelenMax < distanceCodelen) { distanceCodelenMax = distanceCodelen; }
-    if (distanceCodelenMin > distanceCodelen) { distanceCodelenMin = distanceCodelen; }
+    if (distanceCodelenMax < distanceCodelen) {
+      distanceCodelenMax = distanceCodelen;
+    }
+    if (distanceCodelenMin > distanceCodelen) {
+      distanceCodelenMin = distanceCodelen;
+    }
   });
 
   let dataCode = 0;
@@ -244,7 +257,7 @@ function inflateDynamicBlock(stream: BitReadStream, buffer: Uint8WriteStream) {
         break;
       }
       if (dataCodelenMax <= dataCodelen) {
-        throw new Error('Data is corrupted');
+        throw new Error("Data is corrupted");
       }
       dataCodelen++;
       dataCode <<= 1;
@@ -268,12 +281,14 @@ function inflateDynamicBlock(stream: BitReadStream, buffer: Uint8WriteStream) {
     repeatDistanceCodeCodelen = distanceCodelenMin;
     repeatDistanceCodeCode = stream.readRangeCoded(distanceCodelenMin);
     while (true) {
-      repeatDistanceCode = distanceHuffmanTables[repeatDistanceCodeCodelen][repeatDistanceCodeCode];
+      repeatDistanceCode = distanceHuffmanTables[repeatDistanceCodeCodelen][
+        repeatDistanceCodeCode
+      ];
       if (repeatDistanceCode !== undefined) {
         break;
       }
       if (distanceCodelenMax <= repeatDistanceCodeCodelen) {
-        throw new Error('Data is corrupted');
+        throw new Error("Data is corrupted");
       }
       repeatDistanceCodeCodelen++;
       repeatDistanceCodeCode <<= 1;

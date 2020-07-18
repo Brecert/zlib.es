@@ -12,7 +12,7 @@ export class BitReadStream {
   }
 
   public read() {
-    if (this.isEnd) { throw new Error('Lack of data length'); }
+    if (this.isEnd) throw new Error("Lack of data length");
     const bit = this.nowBits & 1;
     if (this.nowBitsLength > 1) {
       this.nowBitsLength--;

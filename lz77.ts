@@ -1,16 +1,20 @@
 import {
   DISTANCE_EXTRA_BIT_BASE,
   LENGTH_EXTRA_BIT_BASE,
-} from './const';
+} from "./const.ts";
 
 const REPEAT_LEN_MIN = 3;
 const FAST_INDEX_CHECK_MAX = 128;
 const FAST_INDEX_CHECK_MIN = 16;
 const FAST_REPEAT_LENGTH = 8;
 
-function generateLZ77IndexMap(input: Uint8Array, startIndex: number, targetLength: number) {
+function generateLZ77IndexMap(
+  input: Uint8Array,
+  startIndex: number,
+  targetLength: number,
+) {
   const end = startIndex + targetLength - REPEAT_LEN_MIN;
-  const indexMap: {[key: number]: number[]} = {};
+  const indexMap: { [key: number]: number[] } = {};
   for (let i = startIndex; i <= end; i++) {
     const indexKey = input[i] << 16 | input[i + 1] << 8 | input[i + 2];
     if (indexMap[indexKey] === undefined) {
@@ -21,7 +25,11 @@ function generateLZ77IndexMap(input: Uint8Array, startIndex: number, targetLengt
   return indexMap;
 }
 
-export function generateLZ77Codes(input: Uint8Array, startIndex: number, targetLength: number) {
+export function generateLZ77Codes(
+  input: Uint8Array,
+  startIndex: number,
+  targetLength: number,
+) {
   let nowIndex = startIndex;
   const endIndex = startIndex + targetLength - REPEAT_LEN_MIN;
   let slideIndexBase = 0;
@@ -32,12 +40,13 @@ export function generateLZ77Codes(input: Uint8Array, startIndex: number, targetL
   let repeatLengthCodeValue = 0;
   let repeatDistanceCodeValue = 0;
   const codeTargetValues = [];
-  const startIndexMap: {[key: number]: number} = {};
-  const endIndexMap: {[key: number]: number} = {};
+  const startIndexMap: { [key: number]: number } = {};
+  const endIndexMap: { [key: number]: number } = {};
   const indexMap = generateLZ77IndexMap(input, startIndex, targetLength);
 
   while (nowIndex <= endIndex) {
-    const indexKey = input[nowIndex] << 16 | input[nowIndex + 1] << 8 | input[nowIndex + 2];
+    const indexKey = input[nowIndex] << 16 | input[nowIndex + 1] << 8 |
+      input[nowIndex + 2];
     const indexes = indexMap[
       indexKey
     ];
@@ -46,7 +55,7 @@ export function generateLZ77Codes(input: Uint8Array, startIndex: number, targetL
       nowIndex++;
       continue;
     }
-    slideIndexBase = (nowIndex > 0x8000) ? nowIndex - 0x8000 : 0 ;
+    slideIndexBase = (nowIndex > 0x8000) ? nowIndex - 0x8000 : 0;
     repeatLengthMax = 0;
     repeatLengthMaxIndex = 0;
 
@@ -62,9 +71,17 @@ export function generateLZ77Codes(input: Uint8Array, startIndex: number, targetL
     endIndexMap[indexKey] = skipindexes;
 
     let checkCount = 0;
-    indexMapLoop: for (let i = endIndexMap[indexKey] - 1, iMin = startIndexMap[indexKey]; iMin <= i; i--) {
-      if (checkCount >= FAST_INDEX_CHECK_MAX
-        || (repeatLengthMax >= FAST_REPEAT_LENGTH && checkCount >= FAST_INDEX_CHECK_MIN)) {
+    indexMapLoop:
+    for (
+      let i = endIndexMap[indexKey] - 1, iMin = startIndexMap[indexKey];
+      iMin <= i;
+      i--
+    ) {
+      if (
+        checkCount >= FAST_INDEX_CHECK_MAX ||
+        (repeatLengthMax >= FAST_REPEAT_LENGTH &&
+          checkCount >= FAST_INDEX_CHECK_MIN)
+      ) {
         break;
       }
       checkCount++;
@@ -106,7 +123,14 @@ export function generateLZ77Codes(input: Uint8Array, startIndex: number, targetL
         }
         repeatDistanceCodeValue = i;
       }
-      codeTargetValues.push([repeatLengthCodeValue, repeatDistanceCodeValue, repeatLengthMax, distance]);
+      codeTargetValues.push(
+        [
+          repeatLengthCodeValue,
+          repeatDistanceCodeValue,
+          repeatLengthMax,
+          distance,
+        ],
+      );
       nowIndex += repeatLengthMax;
     } else {
       codeTargetValues.push([input[nowIndex]]);

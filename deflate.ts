@@ -6,15 +6,17 @@ import {
   DISTANCE_EXTRA_BIT_LEN,
   LENGTH_EXTRA_BIT_BASE,
   LENGTH_EXTRA_BIT_LEN,
-} from './const';
-import {generateDeflateHuffmanTable} from './huffman';
-import {generateLZ77Codes} from './lz77';
-import {BitWriteStream} from './utils/BitWriteStream';
+} from "./const.ts";
+import { generateDeflateHuffmanTable } from "./huffman.ts";
+import { generateLZ77Codes } from "./lz77.ts";
+import { BitWriteStream } from "./_BitWriteStream.ts";
 
 export function deflate(input: Uint8Array) {
   const inputLength = input.length;
-  const streamHeap = (inputLength < BLOCK_MAX_BUFFER_LEN / 2) ? BLOCK_MAX_BUFFER_LEN : inputLength * 2;
-  const stream = new BitWriteStream( new Uint8Array(streamHeap) );
+  const streamHeap = (inputLength < BLOCK_MAX_BUFFER_LEN / 2)
+    ? BLOCK_MAX_BUFFER_LEN
+    : inputLength * 2;
+  const stream = new BitWriteStream(new Uint8Array(streamHeap));
   let processedLength = 0;
   let targetLength = 0;
   while (true) {
@@ -38,7 +40,11 @@ export function deflate(input: Uint8Array) {
   return stream.buffer.subarray(0, stream.bufferIndex);
 }
 
-function deflateUncompressedBlock(stream: BitWriteStream, input: Uint8Array, inputIndex: number) {
+function deflateUncompressedBlock(
+  stream: BitWriteStream,
+  input: Uint8Array,
+  inputIndex: number,
+) {
   stream.writeRange(0, 5);
   const LEN = (input.length - inputIndex > 0xffff) ? 0xffff : input.length;
   const NLEN = 0xffff - LEN;
@@ -53,9 +59,14 @@ function deflateUncompressedBlock(stream: BitWriteStream, input: Uint8Array, inp
   return inputIndex;
 }
 
-function deflateDynamicBlock(stream: BitWriteStream, input: Uint8Array, startIndex: number, targetLength: number) {
+function deflateDynamicBlock(
+  stream: BitWriteStream,
+  input: Uint8Array,
+  startIndex: number,
+  targetLength: number,
+) {
   const lz77Codes = generateLZ77Codes(input, startIndex, targetLength);
-  const clCodeValues: number[] = [256];  // character or matching length
+  const clCodeValues: number[] = [256]; // character or matching length
   const distanceCodeValues: number[] = [];
   let clCodeValueMax = 256;
   let distanceCodeValueMax = 0;
@@ -153,7 +164,7 @@ function deflateDynamicBlock(stream: BitWriteStream, input: Uint8Array, startInd
   stream.writeRange(HDIST - 1, 5);
   // HCLEN
   stream.writeRange(HCLEN - 4, 4);
-  let codelenTableObj: {code: number, bitlen: number} | undefined;
+  let codelenTableObj: { code: number; bitlen: number } | undefined;
   // codelenHuffmanTable
   for (let i = 0; i < HCLEN; i++) {
     codelenTableObj = codelenHuffmanTable.get(CODELEN_VALUES[i]);
@@ -169,7 +180,7 @@ function deflateDynamicBlock(stream: BitWriteStream, input: Uint8Array, startInd
     if (codelenTableObj !== undefined) {
       stream.writeRangeCoded(codelenTableObj.code, codelenTableObj.bitlen);
     } else {
-      throw new Error('Data is corrupted');
+      throw new Error("Data is corrupted");
     }
     if (value === 18) {
       stream.writeRange(runLengthRepeatCount[index] - 11, 7);
@@ -187,7 +198,7 @@ function deflateDynamicBlock(stream: BitWriteStream, input: Uint8Array, startInd
     if (distanceCodeValue !== undefined) {
       codelenTableObj = dataHuffmanTables.get(clCodeValue + 257);
       if (codelenTableObj === undefined) {
-        throw new Error('Data is corrupted');
+        throw new Error("Data is corrupted");
       }
       stream.writeRangeCoded(codelenTableObj.code, codelenTableObj.bitlen);
       if (0 < LENGTH_EXTRA_BIT_LEN[clCodeValue]) {
@@ -199,7 +210,7 @@ function deflateDynamicBlock(stream: BitWriteStream, input: Uint8Array, startInd
       }
       const distanceTableObj = distanceHuffmanTables.get(distanceCodeValue);
       if (distanceTableObj === undefined) {
-        throw new Error('Data is corrupted');
+        throw new Error("Data is corrupted");
       }
       stream.writeRangeCoded(distanceTableObj.code, distanceTableObj.bitlen);
 
@@ -213,7 +224,7 @@ function deflateDynamicBlock(stream: BitWriteStream, input: Uint8Array, startInd
     } else {
       codelenTableObj = dataHuffmanTables.get(clCodeValue);
       if (codelenTableObj === undefined) {
-        throw new Error('Data is corrupted');
+        throw new Error("Data is corrupted");
       }
       stream.writeRangeCoded(codelenTableObj.code, codelenTableObj.bitlen);
     }
@@ -221,7 +232,7 @@ function deflateDynamicBlock(stream: BitWriteStream, input: Uint8Array, startInd
 
   codelenTableObj = dataHuffmanTables.get(256);
   if (codelenTableObj === undefined) {
-    throw new Error('Data is corrupted');
+    throw new Error("Data is corrupted");
   }
   stream.writeRangeCoded(codelenTableObj.code, codelenTableObj.bitlen);
 }

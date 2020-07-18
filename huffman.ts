@@ -2,18 +2,20 @@ export interface ICodelenValues {
   [key: number]: number[];
 }
 export interface IHuffmanTable {
-  [key: number]: {[key: number]: number};
+  [key: number]: { [key: number]: number };
 }
 
-export function generateHuffmanTable(codelenValues: ICodelenValues): IHuffmanTable {
+export function generateHuffmanTable(
+  codelenValues: ICodelenValues,
+): IHuffmanTable {
   const codelens = Object.keys(codelenValues);
   let codelen = 0;
   let codelenMax = 0;
   let codelenMin = Number.MAX_SAFE_INTEGER;
   codelens.forEach((key) => {
     codelen = Number(key);
-    if (codelenMax < codelen) { codelenMax = codelen; }
-    if (codelenMin > codelen) { codelenMin = codelen; }
+    if (codelenMax < codelen) codelenMax = codelen;
+    if (codelenMin > codelen) codelenMin = codelen;
   });
 
   let code = 0;
@@ -21,13 +23,13 @@ export function generateHuffmanTable(codelenValues: ICodelenValues): IHuffmanTab
   const bitlenTables: IHuffmanTable = {};
   for (let bitlen = codelenMin; bitlen <= codelenMax; bitlen++) {
     values = codelenValues[bitlen];
-    if (values === undefined) { values = []; }
+    if (values === undefined) values = [];
     values.sort((a, b) => {
-      if ( a < b ) { return -1; }
-      if ( a > b ) { return 1; }
+      if (a < b) return -1;
+      if (a > b) return 1;
       return 0;
     });
-    const table: {[key: number]: number} = {};
+    const table: { [key: number]: number } = {};
     values.forEach((value) => {
       table[code] = value;
       code++;
@@ -44,10 +46,13 @@ export function makeFixedHuffmanCodelenValues(): ICodelenValues {
   codelenValues[8] = [];
   codelenValues[9] = [];
   for (let i = 0; i <= 287; i++) {
-    (i <= 143) ? codelenValues[8].push(i) :
-    (i <= 255) ? codelenValues[9].push(i) :
-    (i <= 279) ? codelenValues[7].push(i) :
-    codelenValues[8].push(i);
+    (i <= 143)
+      ? codelenValues[8].push(i)
+      : (i <= 255)
+      ? codelenValues[9].push(i)
+      : (i <= 279)
+      ? codelenValues[7].push(i)
+      : codelenValues[8].push(i);
   }
   return codelenValues;
 }
@@ -55,8 +60,8 @@ export function makeFixedHuffmanCodelenValues(): ICodelenValues {
 export function generateDeflateHuffmanTable(
   values: number[],
   maxLength: number = 15,
-  ): Map<number, {code: number, bitlen: number}> {
-  const valuesCount: {[key: number]: number} = {};
+): Map<number, { code: number; bitlen: number }> {
+  const valuesCount: { [key: number]: number } = {};
   for (const value of values) {
     if (!valuesCount[value]) {
       valuesCount[value] = 1;
@@ -65,9 +70,9 @@ export function generateDeflateHuffmanTable(
     }
   }
   const valuesCountKeys = Object.keys(valuesCount);
-  let tmpPackages: Array<{count: number, simbles: number[]}> = [];
+  let tmpPackages: Array<{ count: number; simbles: number[] }> = [];
   let tmpPackageIndex = 0;
-  let packages: Array<{count: number, simbles: number[]}> = [];
+  let packages: Array<{ count: number; simbles: number[] }> = [];
   if (valuesCountKeys.length === 1) {
     packages.push({
       count: valuesCount[0],
@@ -86,15 +91,18 @@ export function generateDeflateHuffmanTable(
       tmpPackageIndex = 0;
       while (tmpPackageIndex + 2 <= tmpPackages.length) {
         const pack = {
-          count: tmpPackages[tmpPackageIndex].count + tmpPackages[tmpPackageIndex + 1].count,
-          simbles: tmpPackages[tmpPackageIndex].simbles.concat(tmpPackages[tmpPackageIndex + 1].simbles),
+          count: tmpPackages[tmpPackageIndex].count +
+            tmpPackages[tmpPackageIndex + 1].count,
+          simbles: tmpPackages[tmpPackageIndex].simbles.concat(
+            tmpPackages[tmpPackageIndex + 1].simbles,
+          ),
         };
         packages.push(pack);
         tmpPackageIndex += 2;
       }
       packages = packages.sort((a: any, b: any) => {
-        if ( a.count < b.count ) { return -1; }
-        if ( a.count > b.count ) { return 1; }
+        if (a.count < b.count) return -1;
+        if (a.count > b.count) return 1;
         return 0;
       });
       if (packages.length % 2 !== 0) {
@@ -103,7 +111,7 @@ export function generateDeflateHuffmanTable(
       tmpPackages = packages;
     }
   }
-  const valuesCodelen: {[key: number]: number} = {};
+  const valuesCodelen: { [key: number]: number } = {};
   packages.forEach((pack) => {
     pack.simbles.forEach((symble) => {
       if (!valuesCodelen[symble]) {
@@ -116,7 +124,7 @@ export function generateDeflateHuffmanTable(
 
   let group: number[];
   const valuesCodelenKeys = Object.keys(valuesCodelen);
-  const codelenGroup: {[key: number]: number[]} = {};
+  const codelenGroup: { [key: number]: number[] } = {};
   let code = 0;
   let codelen = 3;
   const codelenMax = codelen;
@@ -126,24 +134,24 @@ export function generateDeflateHuffmanTable(
     codelen = valuesCodelen[Number(valuesCodelenKey)];
     if (!codelenGroup[codelen]) {
       codelenGroup[codelen] = [];
-      if (codelenValueMin > codelen) { codelenValueMin = codelen; }
-      if (codelenValueMax < codelen) { codelenValueMax = codelen; }
+      if (codelenValueMin > codelen) codelenValueMin = codelen;
+      if (codelenValueMax < codelen) codelenValueMax = codelen;
     }
     codelenGroup[codelen].push(Number(valuesCodelenKey));
   });
 
   code = 0;
-  const table = new Map<number, {code: number, bitlen: number}>();
+  const table = new Map<number, { code: number; bitlen: number }>();
   for (let i = codelenValueMin; i <= codelenValueMax; i++) {
     group = codelenGroup[i];
     if (group) {
       group = group.sort((a, b) => {
-        if ( a < b ) { return -1; }
-        if ( a > b ) { return 1; }
+        if (a < b) return -1;
+        if (a > b) return 1;
         return 0;
       });
       group.forEach((value) => {
-        table.set(value, {code, bitlen: i});
+        table.set(value, { code, bitlen: i });
         code++;
       });
     }

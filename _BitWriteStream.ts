@@ -4,7 +4,11 @@ export class BitWriteStream {
   public nowBits: number;
   public nowBitsIndex = 0;
   public isEnd = false;
-  constructor(buffer: Uint8Array, bufferOffset: number = 0, bitsOffset: number = 0) {
+  constructor(
+    buffer: Uint8Array,
+    bufferOffset: number = 0,
+    bitsOffset: number = 0,
+  ) {
     this.buffer = buffer;
     this.bufferIndex = bufferOffset;
     this.nowBits = buffer[bufferOffset];
@@ -12,7 +16,7 @@ export class BitWriteStream {
   }
 
   public write(bit: number) {
-    if (this.isEnd) { throw new Error('Lack of data length'); }
+    if (this.isEnd) throw new Error("Lack of data length");
     bit <<= this.nowBitsIndex;
     this.nowBits += bit;
     this.nowBitsIndex++;
