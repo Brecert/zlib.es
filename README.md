@@ -1,6 +1,6 @@
 # zlib.es
 
-ECMAScript/Deno compliant lightweight zlib implementation
+ECMAScript/Deno lightweight zlib implementation
 
 ## Usage
 
